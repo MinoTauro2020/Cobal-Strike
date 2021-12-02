@@ -1,0 +1,30 @@
+#POWERVIEW
+powershell-import C:\Tools\PowerSploit\Recon\PowerView.ps1
+powershell Get-Domain
+powershell Get-DomainController | select Forest, Name, OSVersion | fl
+powershell Get-ForestDomain
+powershell Get-DomainPolicyData | select -ExpandProperty SystemAccess
+powershell Get-DomainUser -Identity nlamb -Properties DisplayName, MemberOf | fl
+powershell Get-DomainComputer -Properties DnsHostName | sort -Property DnsHostName
+powershell Get-DomainUser -Identity nlamb -Properties DisplayName, MemberOf | fl
+powershell Get-DomainComputer -Properties DnsHostName | sort -Property DnsHostName
+powershell Get-DomainOU -Properties Name | sort -Property Name
+powershell Get-DomainGroup | where Name -like "*Admins*" | select SamAccountName
+powershell Get-DomainGroupMember -Identity "Domain Admins" | select MemberDistinguishedName
+powershell Get-DomainGroup | where Name -like "*Admins*" | select SamAccountName
+powershell Get-DomainGroupMember -Identity "Domain Admins" | select MemberDistinguishedName
+powershell Get-DomainGPO -Properties DisplayName | sort -Property DisplayName
+powershell Get-DomainGPO -ComputerIdentity wkstn-1 -Properties DisplayName | sort -Property DisplayName
+powershell Get-DomainGPOLocalGroup | select GPODisplayName, GroupName
+powershell Get-DomainGPOUserLocalGroupMapping -LocalGroup Administrators | select ObjectName, GPODisplayName, ContainerName, ComputerName
+powershell Find-DomainUserLocation | select UserName, SessionFromName
+powershell Get-NetSession -ComputerName dc-2 | select CName, UserName
+powershell Get-DomainTrust
+
+execute-assembly C:\Tools\SharpView\SharpView\bin\Debug\SharpView.exe Get-Domain
+
+execute-assembly C:\Tools\ADSearch\ADSearch\bin\Debug\ADSearch.exe --search "(&(objectCategory=group)(cn=*Admins))"
+
+execute-assembly C:\Tools\SharpHound3\SharpHound3\bin\Debug\SharpHound.exe -c DcOnly
+
+execute-assembly C:\Tools\SharpHound3\SharpHound3\bin\Debug\SharpHound.exe -c DcOnly -d cyberbotic.io
